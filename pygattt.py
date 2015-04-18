@@ -49,9 +49,9 @@ class BluetoothLeDevice(object):
         self.verbose = verbose
         self.mac_address = mac_address
         self.con = pexpect.spawn('gatttool -b ' + mac_address + ' --interactive')
-        if log_file:
-            f = open("log.txt","w+")
-            self.con.logfile = f
+        #if log_file:
+        f = file("log.txt","w+")
+        self.con.logfile = f
             
         self.con.expect('\[LE\]>', timeout=1)
         if bond:
