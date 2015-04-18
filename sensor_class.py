@@ -1,4 +1,4 @@
-import pexepct
+import pexpect
 import time
 import sys
 import pygattt
@@ -7,7 +7,6 @@ import os
 class sensor_error(Exception): pass
 
 class sensor(pygattt.BluetoothLeDevice):
-
     def __init__(self,sensor_tag,list_handles,verbose=True,enable=True,notify=True,set_period=True):
         #Expects a connected BluetoothLeDevice object - sensor_tag as an input
         #list_handles goes in this order:
@@ -20,6 +19,10 @@ class sensor(pygattt.BluetoothLeDevice):
         # list_handles[5] = period_handle - int
         # list_handles[6] = period_value - str
         #accel_list_handles = [52,'03','00',48,49,'0100',55,'10'] - for 10 milliseconds
+        self.enable = enable
+        self.notify = notify
+        self.set_period = set_period
+        self.verbose = verbose
         self.enable_handle = list_handles[0]
         self.enable_value =  list_handles[1]
         self.disable_value = list_handles[2]
@@ -36,14 +39,13 @@ class sensor(pygattt.BluetoothLeDevice):
         if self.notify:
             self.notify_sensor()
         if self.set_period:
-            self.set_period()
+            self.set_perd()
 
 
 
-        print "Sensor - "+str(self.__name__)+"is initialized in the Senosor Tag - "+str(sensor_tag.mac_address)+"\n"
+        print "Sensor - "+"is initialized in the Senosor Tag - "+str(sensor_tag.mac_address)+"\n" #+str(self.__name__)
 
     def enable_sensor(self):
-
         #Uses the char_write from pygattt
         sensor_tag.char_write(self.enable_handle,self.enable_value,wait_for_response=True)
         state = sensor_tag.char_read_hnd(self.enable_handle)
@@ -52,37 +54,46 @@ class sensor(pygattt.BluetoothLeDevice):
         else:
             print "Enable unsuccesfull \n"
             raise sensor_error("Enable unsuccesful. Aborted \n")
+        
 
     def notify_sensor(self):
-        sensor_tag.char_write(self.notify_handle,self.noftify_value,wait_for_response=True)
-        print "Notification enabled \n" + "Value: " str(sensor_tag.char_read_hnd(self.notify_handle) + "\n" #Checking should be made more rigorous.
-    def set_period(self):
+        sensor_tag.char_write(self.notify_handle,self.notify_value,wait_for_response=True)
+        print ("Notification enabled " + "Value: " + str(sensor_tag.char_read_hnd(self.notify_handle))+'\n' )                                           
+                                                                #Checking should be made more rigorous.
+                                                          
+    def set_perd(self):                                                          
         sensor_tag.char_write(self.period_handle,self.period_value,wait_for_response=True)
-        print "Period set \n" + "Value: " str(sensor_tag.char_read_hnd(self.period_handle) + "\n" #Checking should be made more rigorous.
+        print "Period set \n" + "Value: " + str(sensor_tag.char_read_hnd(self.period_handle)) + "\n" #Checking should be made more rigorous.
     #def disable(self): - To do:
 
 
-def read_notification_output(sensor_tag,handle_to_read):
-    f = sensor_tag.con.logfile
+def read_notification_output(sensor_tag,handle_to_read): ## log.txt is the log file of the pygatt spawn of pexepect. Need to grab the pointer from the sensor_tag object itself.
+    f = open('log.txt','w+')
     f.truncate(0)
-    substring = "Notification handle :" + str(handle_to_read)
+    substring = "Notification handle = " + str(handle_to_read)
     data_sen= 0
     while True:
         time.sleep(0.100)
+        os.system('clear')
         data = f.readlines()
         for line in data:
             if substring in line:
                 data_sen = line[36:44]
-                print data_sen
-
+                conv_values = accel_convert(data_sen)
+                print conv_values 
         f.truncate(0)
-
+def accel_convert(hex_val):
+    val = hex_val.split()
+    int_values = []
+    for reading in val:
+        int_values.append(int(str(reading),16)/64.0)
+    return int_values
 
 
 
 
 sensor_tag = pygattt.BluetoothLeDevice('90:59:AF:0B:83:25',bond=False,connect=True,verbose=True)
-accel_list_handles = [52,'03','00',48,49,'0100',55,'10'] 
+accel_list_handles = [52,'02','00',48,49,'0100',55,'10'] 
 accel = sensor(sensor_tag,accel_list_handles)
 read_notification_output(sensor_tag,'0x0030')
 
