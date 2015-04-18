@@ -44,12 +44,15 @@ class BluetoothLeDevice(object):
     subscribed_handlers = {}
     running = True
 
-    def __init__(self, mac_address, bond=False, connect=True, verbose=True):
+    def __init__(self, mac_address, bond=False, connect=True, verbose=True,log_file=True): #Logs to log.txt if true
         self.lock = Lock()        
         self.verbose = verbose
-        f = open("log.txt","w+")
+        self.mac_address = mac_address
         self.con = pexpect.spawn('gatttool -b ' + mac_address + ' --interactive')
-        self.con.logfile = f
+        if log_file:
+            f = open("log.txt","w+")
+            self.con.logfile = f
+            
         self.con.expect('\[LE\]>', timeout=1)
         if bond:
             self.con.sendline('sec-level medium')
@@ -149,9 +152,10 @@ class BluetoothLeDevice(object):
                 except pexpect.TIMEOUT:
                     raise BluetoothLeError(self.con.before)
 
-    def char_write(self, handle, value, wait_for_response=False):
+    def char_write(self, handle, value,val_type_hex=False, wait_for_response=False): #Added val_type_hex to choose between string literals/hex values as writing inputs.
         with self.connection_lock:
-            #hexstring = ''.join('%02x' % byte for byte in value)
+            if val_type_hex:
+                hexstring = ''.join('%02x' % byte for byte in value)
             hexstring = str(value)
             if wait_for_response:
                 cmd = 'req'
