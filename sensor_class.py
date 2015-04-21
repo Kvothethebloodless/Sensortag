@@ -70,32 +70,79 @@ class sensor(pygattt.BluetoothLeDevice):
 def read_notification_output(sensor_tag,handle_to_read): ## log.txt is the log file of the pygatt spawn of pexepect. Need to grab the pointer from the sensor_tag object itself.
     f = open('log.txt','w+')
     f.truncate(0)
-    substring = "Notification handle = " + str(handle_to_read)
+    string_to_read = []
+    string_to_read.append("Notification handle = " + str(handle_to_read[0]))#Accel
+    string_to_read.append("Notification handle = " + str(handle_to_read[1]))#Gyro
+    string_to_read.append("Notification handle = " + str(handle_to_read[2]))#Magneto
+    output = {}
+    
+    for handle in handle_to_read:
+        output[handle] = 0
+        
+
     data_sen= 0
     while True:
         time.sleep(0.100)
         os.system('clear')
-        data = f.readlines()
-        for line in data:
-            if substring in line:
-                data_sen = line[36:44]
-                conv_values = accel_convert(data_sen)
-                print conv_values 
+        notification_out_tty = f.readlines()
+        for line in notification_out_tty:
+            
+            #print ('1111111')
+            for specific_sensor_handle in string_to_read:
+                #print ('2222222')
+                if specific_sensor_handle in line:
+                    #print '33334'
+                    data_sen = line[36:44]
+                    cnvted_val = conv_val(data_sen,specific_sensor_handle[22:28])
+                    output[specific_sensor_handle[22:28]] = cnvted_val
+
+                     
+        print output       
         f.truncate(0)
+
+def conv_val(data,handle):
+    lis =  [];
+    lis.append(data)
+    lis.append(handle)
+    return lis
 def accel_convert(hex_val):
     val = hex_val.split()
     int_values = []
     for reading in val:
-        int_values.append(int(str(reading),16)/64.0)
+        int_values.append(int(str(reading),16)*9.8/64.0)
     return int_values
+#def gyro_convert(hex_val):
+    
+#def magneto_convert(hex_val):
+    
 
 
 
 
 sensor_tag = pygattt.BluetoothLeDevice('90:59:AF:0B:83:25',bond=False,connect=True,verbose=True)
-accel_list_handles = [52,'02','00',48,49,'0100',55,'10'] 
+#list_handles goes in this order:
+        # list_handles[0] = enable_handle - the decimal number version of the handle
+        # list_handles[1] = enable_value - the string to write to to enable the sensor accordingly
+        # lsit_handles[2] = disable_value - The string to write to disable the value 
+        # list_handles[3] = data_handle - int
+        # list_handles[4] = notify_handle - int
+        # list_handles[5] = notify_value - str (The pygatt source code has been modified accordingly to write strings
+                                                #using the def ""char-write"")
+        # list_handles[6] = period_handle - int
+        # list_handles[7] = period_value - str
+        #accel_list_handles = [52,'03','00',48,49,'0100',55,'10'] - for 10 milliseconds
+
+accel_list_handles = [52,'02','00',48,49,'0100',55,'10']
+gyro_list_handles =  [100,'07','00',96,97,'0100',103,'10']
+magneto_list_handles = [74,'01','00',70,71,'0100',77,'10']
+
+
 accel = sensor(sensor_tag,accel_list_handles)
-read_notification_output(sensor_tag,'0x0030')
+gyro = sensor(sensor_tag,gyro_list_handles)
+magneto_list_handles= sensor(sensor_tag,magneto_list_handles)
+
+read_notification_output(sensor_tag,['0x0030','0x0060','0x0046'])
+
 
 
 
