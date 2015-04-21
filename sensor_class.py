@@ -3,6 +3,7 @@ import time
 import sys
 import pygattt
 import os
+import numpy
 
 class sensor_error(Exception): pass
 
@@ -78,8 +79,15 @@ def read_notification_output(sensor_tag,handles_to_read): ## log.txt is the log 
     
     for handle in handles_to_read:
         output[handle] = '0 0 0'
-        
 
+    plot_data=[]
+    FIFO_size = 50
+    element = ['gyro':[0,0,0],'magneto':[0,0,0],'accel',[0,0,0]]
+    
+    for n in range(FIFO_size):
+        plot_data.append(element)
+    
+    
     data_sen= 0
     while True:
         time.sleep(0.100)
@@ -92,6 +100,9 @@ def read_notification_output(sensor_tag,handles_to_read): ## log.txt is the log 
                     output[specific_sensor_handle] = str(data_sen)#[22:28]]
                     #print output
                     cnvted_val = conv_val(output)
+                    plot_data.append(cnvted_val)
+                    plot_data.pop(0)
+                    
                     
 
                      
