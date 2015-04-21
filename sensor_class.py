@@ -67,17 +67,17 @@ class sensor(pygattt.BluetoothLeDevice):
     #def disable(self): - To do:
 
 
-def read_notification_output(sensor_tag,handle_to_read): ## log.txt is the log file of the pygatt spawn of pexepect. Need to grab the pointer from the sensor_tag object itself.
+def read_notification_output(sensor_tag,handles_to_read): ## log.txt is the log file of the pygatt spawn of pexepect. Need to grab the pointer from the sensor_tag object itself.
     f = open('log.txt','w+')
     f.truncate(0)
-    string_to_read = []
-    string_to_read.append("Notification handle = " + str(handle_to_read[0]))#Accel
-    string_to_read.append("Notification handle = " + str(handle_to_read[1]))#Gyro
-    string_to_read.append("Notification handle = " + str(handle_to_read[2]))#Magneto
+    #string_to_read = []
+    #string_to_read.append(str(handle_to_read[0]))#Accel
+    #string_to_read.append(str(handle_to_read[1]))#Gyro
+    #string_to_read.append(str(handle_to_read[2]))#Magneto """"Notification handle = " + """
     output = {}
     
-    for handle in handle_to_read:
-        output[handle] = 0
+    for handle in handles_to_read:
+        output[handle] = '0 0 0'
         
 
     data_sen= 0
@@ -86,35 +86,61 @@ def read_notification_output(sensor_tag,handle_to_read): ## log.txt is the log f
         os.system('clear')
         notification_out_tty = f.readlines()
         for line in notification_out_tty:
-            
-            #print ('1111111')
-            for specific_sensor_handle in string_to_read:
-                #print ('2222222')
-                if specific_sensor_handle in line:
-                    #print '33334'
-                    data_sen = line[36:44]
-                    cnvted_val = conv_val(data_sen,specific_sensor_handle[22:28])
-                    output[specific_sensor_handle[22:28]] = cnvted_val
+            for specific_sensor_handle in handles_to_read:
+                if specific_sensor_handle in line:                  
+                    data_sen = line[36:44]                                                               #[22:28])
+                    output[specific_sensor_handle] = str(data_sen)#[22:28]]
+                    #print output
+                    cnvted_val = conv_val(output)
+                    
 
                      
-        print output       
+        print cnvted_val       
         f.truncate(0)
 
-def conv_val(data,handle):
-    lis =  [];
-    lis.append(data)
-    lis.append(handle)
-    return lis
+def conv_val(output):
+    conv_value = {}
+    #handle_sensor_functions = 
+    for handle in output: #handle is the key of this dictionary
+        if handle == '0x0030':
+            conv_value['accel'] = accel_convert(output[handle])
+        elif handle == '0x0046':
+            conv_value['magneto'] = magneto_convert(output[handle])
+        elif handle == '0x0060':
+            conv_value['gyro'] = gyro_convert(output[handle])
+        #conv_val[handle] = handle_sensor_functions[handle](output[handle])
+    return conv_value
+
+
+
 def accel_convert(hex_val):
-    val = hex_val.split()
-    int_values = []
-    for reading in val:
-        int_values.append(int(str(reading),16)*9.8/64.0)
-    return int_values
-#def gyro_convert(hex_val):
+##    val = hex_val.split()
+##    int_values = []
+##    for reading in val:
+##        int_values.append(int(str(reading),16)*9.8/64.0)
+##    return int_values
+    #print hex_val
+    hex_val_split = hex_val.split()
+    val_x = int(hex_val_split[0],16)*9.8/(64.0)
+    val_y = int(hex_val_split[1],16)*9.8/(64.0)
+    val_z = int(hex_val_split[2],16)*9.8/(64.0)
+    return [val_x,val_y,val_z]
+
+def gyro_convert(hex_val):
+    #print hex_val
+    hex_val_split = hex_val.split()
+    val_x = int(hex_val_split[0],16)*1.0/(65536/500)
+    val_y = int(hex_val_split[1],16)*1.0/(65536/500)
+    val_z = int(hex_val_split[2],16)*1.0/(65536/500)
+    return [val_x,val_y,val_z]
     
-#def magneto_convert(hex_val):
-    
+def magneto_convert(hex_val):
+    #print hex_val
+    hex_val_split = hex_val.split()
+    val_x = int(hex_val_split[0],16)*1.0/(65536/2000)
+    val_y = int(hex_val_split[1],16)*1.0/(65536/2000)
+    val_z = int(hex_val_split[2],16)*1.0/(65536/2000)
+    return [val_x,val_y,val_z]
 
 
 
@@ -140,6 +166,9 @@ magneto_list_handles = [74,'01','00',70,71,'0100',77,'10']
 accel = sensor(sensor_tag,accel_list_handles)
 gyro = sensor(sensor_tag,gyro_list_handles)
 magneto_list_handles= sensor(sensor_tag,magneto_list_handles)
+
+#handle_name = [(0x0030,accel_convert),(0x0060,gyro_convert),(0x0046,magneto_convert)]
+                        
 
 read_notification_output(sensor_tag,['0x0030','0x0060','0x0046'])
 
