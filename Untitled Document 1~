@@ -1,0 +1,13 @@
+   1 from pylab import *
+   2 import time
+   3 
+   4 ion()
+   5 
+   6 tstart = time.time()               # for profiling
+   7 x = arange(0,2*pi,0.01)            # x-array
+   8 line, = plot(x,sin(x))
+   9 for i in arange(1,200):
+  10     line.set_ydata(sin(x+i/10.0))  # update the data
+  11     draw()                         # redraw the canvas
+  12 
+  13 print 'FPS:' , 200/(time.time()-tstart)

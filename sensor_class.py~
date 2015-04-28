@@ -8,7 +8,7 @@ import numpy
 class sensor_error(Exception): pass
 
 class sensor(pygattt.BluetoothLeDevice):
-    def __init__(self,sensor_tag,list_handles,calc_func,verbose=True,enable=True,notify=True,set_period=True):
+    def __init__(self,sensor_tag,list_handles,verbose=True,enable=True,notify=True,set_period=True):
         #Expects a connected BluetoothLeDevice object - sensor_tag as an input
         #list_handles goes in this order:
         # list_handles[0] = enable_handle - the decimal number version of the handle
