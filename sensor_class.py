@@ -81,28 +81,6 @@ class sensor(pygattt.BluetoothLeDevice):
         
 
 
-
-##
-##def conv_val(output):
-##    conv_value = {}
-##    #handle_sensor_functions = 
-##    for handle in output: #handle is the key of this dictionary
-##        if handle == '0x0030':
-##            conv_value['accel'] = convert.accel_convert(output[handle])
-##        elif handle == '0x0046':
-##            conv_value['magneto'] = convert.magneto_convert(output[handle])
-##        elif handle == '0x0060':
-##            conv_value['gyro'] = convert.gyro_convert(output[handle])
-##        #conv_val[handle] = handle_sensor_functions[handle](output[handle])
-##    return conv_value
-
-
-
-
-
-
-
-
 sensor_tag = pygattt.BluetoothLeDevice('90:59:AF:0B:83:25',bond=False,connect=True,verbose=True)
 #list_handles goes in this order:
         # list_handles[0] = enable_handle - the decimal number version of the handle
@@ -125,24 +103,19 @@ magnetometer= sensor(sensor_tag,magneto_list_handles,convert.magneto)
 
 data_list_handles = ['0x0030','0x0060','0x0046']
 dict_conv_func = {'0x0030':accelerometer.calculate,'0x0046':magnetometer.calculate,'0x0060':gyroscope.calculate}
-##output_2 = dict[(handle,dict_conv_func[handle](output[handle])) for handle in data_list_handles]
-##
-##
-##
-##                        
+                    
 notif = notify.notification(sensor_tag,data_list_handles)
-##
-##notify.parse()
+
 while True:
     time.sleep(.100)
     os.system('clear')
-    output = notif.parse_output()
-    output_2 = {}
+    raw_output = notif.parse_output()
+    calc_output = {}
 
     #output_2 = dict([(handle,dict_conv_func[str(handle)](output[handle])) for handle in data_list_handles])
     for handle in data_list_handles:
-        output_2[handle] = dict_conv_func[handle](output[handle])
-    print output_2
+        calc_output[handle] = dict_conv_func[handle](raw_output[handle])
+    print calc_output
 
 
     
