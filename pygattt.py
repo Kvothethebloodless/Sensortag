@@ -164,7 +164,7 @@ class BluetoothLeDevice(object):
             cmd = 'char-write-%s 0x%02x %s' % (cmd, handle, hexstring)
             #print str(cmd)
             if self.verbose:
-                print("Sending command: %s" % cmd)
+                print("-*-*-*Sending command: %s" % cmd)
             self.con.sendline(cmd)
 
             if wait_for_response:

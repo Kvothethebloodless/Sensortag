@@ -5,9 +5,19 @@ import pygattt
 import os
 import numpy
 import convert
-import notify
+import notifi
+from matplotlib import pyplot as plt
+from matplotlib import animation
+import numpy as np
 
-accel_list_handles = [52,'02','00',48,49,'0100',55,'10']
+
+global calc_output
+global raw_output
+
+
+
+
+accel_list_handles = [52,'01','00',48,49,'0100',55,'10']
 gyro_list_handles =  [100,'07','00',96,97,'0100',103,'10']
 magneto_list_handles = [74,'01','00',70,71,'0100',77,'10']
 
@@ -78,8 +88,78 @@ class sensor(pygattt.BluetoothLeDevice):
     def calculate(self,hex_val):
         val = self.calc_fun_pointer(hex_val)
         return val
+class plotting():
+    def __init__(self):
+        #self.data = data
+        self.fig_accel = plt.figure()
+        self.ax_accel = plt.axes(xlim = (0,100), ylim = (0,64))
+              
+        #self.fig_gyro = plt.figure()
+        #self.ax_gyro = plt.axes(xlim = (0,100), ylim = (-5,120))
+        
+        #self.fig_magneto = plt.figure()
+        #self.ax_magneto = plt.axes(xlim = (0,100), ylim = (-10,10))
+
+
+        self.accel_anim_objects = [plt.plot([], [])[0] for _ in range(3)]
+        print self.accel_anim_objects
+        #self.gyro_anim_objects = [plt.plot([], [])[0] for _ in range(3)]
+        #self.magneto_anim_objects = [plt.plot([], [])[0] for _ in range(3)]
+
+        #self.anim_init()
+        #self.anim_init()
+        #self.anim_init()
+        
         
 
+    def anim_init(self):
+        zero_data = list(np.zeros(100))
+        hundred = list(np.arange(1,101))
+        for animobj in self.accel_anim_objects:
+            animobj.set_data(hundred,zero_data)
+
+        print self.accel_anim_objects[0:2]
+        return self.accel_anim_objects
+        
+            
+            
+            
+    def animate(self,i):
+        print '------- \n'
+        j = 0
+        n = 1
+        #for n in range(3):
+        
+        get_out(raw_output)
+        print raw_output
+        print '\n'
+        animobj = self.accel_anim_objects[n]
+        dummy_list= animobj.get_ydata()
+        dummy_list.pop(0)
+        dummy_list.append(calc_output['0x0030'][n])
+        print '$$$$$$$$$$$$$$ \n'
+        print calc_output['0x0030'][n]
+        print '\n $$$$$$$$$$$$$$ \n'
+        animobj.set_ydata(dummy_list)
+        
+        print animobj.get_ydata()
+       
+        print '\n'
+
+        print '^^^^^^^^^^^^^^^^\n'
+        print calc_output['0x0060'][n]
+        print '^^^^^^^^^^^^^^^^\n'
+        
+        return [self.accel_anim_objects[n]]
+    
+def get_out(raw_output):
+    raw_output = notif.parse_output(raw_output)   
+
+    #output_2 = dict([(handle,dict_conv_func[str(handle)](output[handle])) for handle in data_list_handles])
+    for handle in data_list_handles:
+        calc_output[handle] = dict_conv_func[handle](raw_output[handle])
+    print calc_output
+    
 
 sensor_tag = pygattt.BluetoothLeDevice('90:59:AF:0B:83:25',bond=False,connect=True,verbose=True)
 #list_handles goes in this order:
@@ -96,31 +176,35 @@ sensor_tag = pygattt.BluetoothLeDevice('90:59:AF:0B:83:25',bond=False,connect=Tr
 
 accelerometer = sensor(sensor_tag,accel_list_handles,convert.accel)
 gyroscope = sensor(sensor_tag,gyro_list_handles,convert.gyro)
-magnetometer= sensor(sensor_tag,magneto_list_handles,convert.magneto)
+#magnetometer= sensor(sensor_tag,magneto_list_handles,convert.magneto)
 
 
 #handle_name = [(0x0030,accel_convert),(0x0060,gyro_convert),(0x0046,magneto_convert)]
 
-data_list_handles = ['0x0030','0x0060','0x0046']
-dict_conv_func = {'0x0030':accelerometer.calculate,'0x0046':magnetometer.calculate,'0x0060':gyroscope.calculate}
+data_list_handles = ['0x0030','0x0060']#,'0x0046']
+dict_conv_func = {'0x0030':accelerometer.calculate,'0x0060':gyroscope.calculate} #'0x0046':magnetometer.calculate,
+
+zero_val = '0 0 0'
+raw_output = dict([(handle,zero_val) for handle in data_list_handles])
+
+
                     
-notif = notify.notification(sensor_tag,data_list_handles)
+global notifi
+notif = notifi.notification(sensor_tag,data_list_handles)
+calc_output = {}
+plot_obj = plotting()
 
-while True:
-    time.sleep(.100)
-    os.system('clear')
-    raw_output = notif.parse_output()
-    calc_output = {}
 
-    #output_2 = dict([(handle,dict_conv_func[str(handle)](output[handle])) for handle in data_list_handles])
-    for handle in data_list_handles:
-        calc_output[handle] = dict_conv_func[handle](raw_output[handle])
-    print calc_output
-
+##while True:
+##    time.sleep(.100)
+##    os.system('clear')
 
     
+anim = animation.FuncAnimation(plot_obj.fig_accel, plot_obj.animate, init_func=plot_obj.anim_init, frames = 100000, interval=20, blit=True) #Currently animating only one axis acceleration. Soon going to extend it to all axes
+plt.show()
 
 
+ 
 
 
 
